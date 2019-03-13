@@ -45,6 +45,11 @@ public class GameView extends View {
 		//Here we get the height and weight
 		h = canvas.getHeight();
 		w = canvas.getWidth();
+		if (!game.CoinsInit())
+		{
+			game.initCoins();
+			game.SetCoinsInit(true);
+		}
 		//update the size for the canvas to the game.
 		game.setSize(h,w);
 		Log.d("GAMEVIEW","h = "+h+", w = "+w);
@@ -54,6 +59,20 @@ public class GameView extends View {
 
 		//draw the pacman
 		canvas.drawBitmap(game.getPacBitmap(), game.getPacx(),game.getPacy(), paint);
+
+		for (GoldCoin coin : game.getCoins())
+		{
+			if (!coin.isTaken())
+			{
+			canvas.drawBitmap(game.getCoinBitMap(), coin.getCoinx(), coin.getCoiny(), paint);
+			}
+		}
+
+		if(game.getGameOver())
+		{
+			game.newGame();
+		}
+
 		//TODO loop through the list of goldcoins and draw them.
 		super.onDraw(canvas);
 	}

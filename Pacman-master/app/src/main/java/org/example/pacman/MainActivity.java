@@ -16,6 +16,7 @@ public class MainActivity extends AppCompatActivity {
     GameView gameView;
     //reference to the game class.
     Game game;
+    int speed = 20;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,15 +36,38 @@ public class MainActivity extends AppCompatActivity {
         game.newGame();
 
         Button buttonRight = findViewById(R.id.moveRight);
+        Button buttonLeft = findViewById(R.id.moveLeft);
+        Button buttonUp = findViewById(R.id.moveUp);
+        Button buttonDown = findViewById(R.id.moveDown);
         //listener of our pacman, when somebody clicks it
         buttonRight.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
-                game.movePacmanRight(10);
+                game.movePacmanRight(speed);
             }
         });
+        buttonLeft.setOnClickListener(new View.OnClickListener() {
 
+            @Override
+            public void onClick(View v) {
+                game.movePacmanLeft(speed);
+            }
+        });
+        buttonUp.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                game.movePacmanUp(speed);
+            }
+        });
+        buttonDown.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                game.movePacmanDown(speed);
+            }
+        });
 
     }
 
@@ -66,7 +90,7 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this,"settings clicked",Toast.LENGTH_LONG).show();
             return true;
         } else if (id == R.id.action_newGame) {
-            Toast.makeText(this,"New Game clicked",Toast.LENGTH_LONG).show();
+            game.newGame();
             return true;
         }
         return super.onOptionsItemSelected(item);
