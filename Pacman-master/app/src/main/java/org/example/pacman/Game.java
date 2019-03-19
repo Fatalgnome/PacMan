@@ -21,11 +21,14 @@ public class Game {
 
     private Bitmap pacBitmap;
     private Bitmap coinBitMap;
+    private Bitmap enemyBitMap;
 
     private TextView pointsView;
+    private TextView timeView;
     private int pacx, pacy;
     //the list of goldcoins - initially empty
     private ArrayList<GoldCoin> coins = new ArrayList<>();
+    private ArrayList<Enemy> enemies = new ArrayList<>();
     //a reference to the gameview
     private GameView gameView;
     private int h,w; //height and width of screen
@@ -34,13 +37,26 @@ public class Game {
     private boolean gameOver = false;
     private Random randy = new Random();
     private boolean coinsInit = false;
+    private boolean enemiesInit = false;
+    private boolean running = false;
+    private boolean isPaused = false;
 
-    public Game(Context context, TextView view)
+    private int up = 0;
+    private int left = 1;
+    private int down = 2;
+    private int right = 3;
+    private int curDir;
+    private int enemyDir;
+    private int time;
+
+    public Game(Context context, TextView view, TextView timeView)
     {
         this.context = context;
         this.pointsView = view;
+        this.timeView = timeView;
         pacBitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.pacman);
         coinBitMap = BitmapFactory.decodeResource(context.getResources(), R.drawable.golden);
+        enemyBitMap = BitmapFactory.decodeResource(context.getResources(), R.drawable.enemy);
     }
 
     public void setGameView(GameView view)
@@ -55,14 +71,23 @@ public class Game {
         pacy = 400; //just some starting coordinates
         //reset the points
         points = 0;
-        pointsView.setText(context.getResources().getString(R.string.points)+" "+points);
+        running = false;
+        isPaused = false;
+        time = 30;
+        timeView.setText(context.getResources().getString(R.string.time) + " " + time);
+        pointsView.setText(context.getResources().getString(R.string.points) + " " + points);
         coinsInit = false;
+        enemiesInit = false;
         gameOver = false;
         coinsLeft = amountofCoins;
 
         for (GoldCoin coin : coins)
         {
             coin.SetIsTaken(true);
+        }
+        for (Enemy enemy : enemies)
+        {
+            enemy.SetIsAlive(false);
         }
 
         gameView.invalidate(); //redraw screen
@@ -78,48 +103,36 @@ public class Game {
         }
     }
 
+    public void initEnemies()
+    {
+        for (int i = 0; i < 2; i++)
+        {
+            enemies.add(new Enemy(
+                    randy.nextInt(gameView.w - enemyBitMap.getWidth()),
+                    randy.nextInt(gameView.h - enemyBitMap.getHeight())));
+        }
+    }
+
     public void setSize(int h, int w)
     {
         this.h = h;
         this.w = w;
     }
 
-    public void movePacmanRight(int pixels)
+    public void movePacmanRight()
     {
-        //still within our boundaries?
-        if (pacx+pixels+pacBitmap.getWidth()<w) {
-            pacx = pacx + pixels;
-            doCollisionCheck();
-            gameView.invalidate();
-        }
+        curDir = right;
     }
-    public void movePacmanLeft(int pixels)
+    public void movePacmanLeft()
     {
-        //still within our boundaries?
-        if (pacx+pixels > 0) {
-            pacx = pacx - pixels;
-            doCollisionCheck();
-            gameView.invalidate();
-        }
+        curDir = left;
     }
-    public void movePacmanUp(int pixels)
+    public void movePacmanUp()
     {
-        //still within our boundaries?
-        if (pacy+pixels > 0) {
-            pacy = pacy - pixels;
-            doCollisionCheck();
-            gameView.invalidate();
-        }
+        curDir = up;
     }
-    public void movePacmanDown(int pixels)
-    {
-        //still within our boundaries?
-        if (pacy+pixels+pacBitmap.getHeight()<h) {
-            pacy = pacy + pixels;
-            doCollisionCheck();
-            gameView.invalidate();
-        }
-    }
+    public void movePacmanDown() {curDir = down;}
+
 
     //TODO check if the pacman touches a gold coin
     //and if yes, then update the neccesseary data
@@ -130,20 +143,35 @@ public class Game {
     {
         for (GoldCoin coin : coins)
         {
-            if ((Math.sqrt(((coin.getCoinx() - pacx) * (coin.getCoinx()- pacx))
+            if (Math.sqrt(((coin.getCoinx() - pacx) * (coin.getCoinx()- pacx))
                     + ((coin.getCoiny() - pacy) * (coin.getCoiny() - pacy))) <= 150
-                    && !coin.isTaken()) || Math.sqrt((-(coin.getCoinx() - pacx) * -(coin.getCoinx() - pacx))
+                    && !coin.isTaken() || Math.sqrt((-(coin.getCoinx() - pacx) * -(coin.getCoinx() - pacx))
                     + (-(coin.getCoiny() - pacy) * -(coin.getCoiny() - pacy))) <= 150
                     && !coin.isTaken() )
             {
                 coin.SetIsTaken(true);
                 points += coin.getValue();
-                pointsView.setText(" " + context.getText(R.string.points) +" "+ points);
+                pointsView.setText(context.getText(R.string.points) +" "+ points);
                 coinsLeft--;
                 if (coinsLeft == 0)
                 {
                     gameOver = true;
                 }
+            }
+        }
+
+    }
+    public void enemyCollision()
+    {
+        for (Enemy enemy : enemies)
+        {
+            if (Math.sqrt(((enemy.getEnemyX() - pacx) * (enemy.getEnemyX() - pacx))
+                    + ((enemy.getEnemyY() - pacy) * (enemy.getEnemyY() - pacy))) <= 100
+                    && enemy.isAlive() || Math.sqrt((-(enemy.getEnemyX() - pacx) * -(enemy.getEnemyX() - pacx))
+                    + (-(enemy.getEnemyY() - pacy) * -(enemy.getEnemyY() - pacy))) <= 100
+                    && enemy.isAlive())
+            {
+                gameOver = true;
             }
         }
     }
@@ -152,11 +180,23 @@ public class Game {
     {
         return pacx;
     }
-
+    public int setPacx(int value){return pacx = value;}
     public int getPacy()
     {
         return pacy;
     }
+    public int setPacy(int value){return pacy = value;}
+
+    public int getCurDir(){return curDir;}
+    public int getCurEnemyDir(){return enemyDir;}
+    public int setEnemyDir(int value){return enemyDir = value;}
+    public int getTime(){return time;}
+    public int setTime(int value){return time = value;}
+
+    public boolean isRunning(){return running;}
+    public boolean setRunning(boolean value) {return running = value;}
+    public boolean getIsPaused(){return isPaused;}
+    public boolean setIsPaused(boolean value) {return isPaused = value;}
 
     public int getPoints()
     {
@@ -164,20 +204,20 @@ public class Game {
     }
 
     public boolean getGameOver() {return gameOver;}
+    public boolean setGameOver(boolean value) {return gameOver = value;}
 
     public boolean CoinsInit() { return coinsInit; }
-    public boolean SetCoinsInit(boolean value) {return coinsInit = value;}
+    public boolean setCoinsInit(boolean value) {return coinsInit = value;}
+    public boolean EnemiesInit() { return enemiesInit; }
+    public boolean setEnemiesInit(boolean value) {return enemiesInit = value;}
 
-    public ArrayList<GoldCoin> getCoins()
-    {
-        return coins;
-    }
 
-    public Bitmap getPacBitmap()
-    {
-        return pacBitmap;
-    }
+    public ArrayList<GoldCoin> getCoins(){return coins;}
+    public ArrayList<Enemy> getEnemies(){return enemies;}
+
+    public Bitmap getPacBitmap() {return pacBitmap;}
     public Bitmap getCoinBitMap(){return coinBitMap;}
+    public Bitmap getEnemyBitMap(){return enemyBitMap;}
 
 
 }

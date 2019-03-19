@@ -48,8 +48,14 @@ public class GameView extends View {
 		if (!game.CoinsInit())
 		{
 			game.initCoins();
-			game.SetCoinsInit(true);
+			game.setCoinsInit(true);
 		}
+		if (!game.EnemiesInit())
+		{
+			game.initEnemies();
+			game.setEnemiesInit(true);
+		}
+
 		//update the size for the canvas to the game.
 		game.setSize(h,w);
 		Log.d("GAMEVIEW","h = "+h+", w = "+w);
@@ -65,6 +71,14 @@ public class GameView extends View {
 			if (!coin.isTaken())
 			{
 			canvas.drawBitmap(game.getCoinBitMap(), coin.getCoinx(), coin.getCoiny(), paint);
+			}
+		}
+
+		for (Enemy enemy : game.getEnemies())
+		{
+			if (enemy.isAlive())
+			{
+				canvas.drawBitmap(game.getEnemyBitMap(), enemy.getEnemyX(), enemy.getEnemyY(), paint);
 			}
 		}
 
