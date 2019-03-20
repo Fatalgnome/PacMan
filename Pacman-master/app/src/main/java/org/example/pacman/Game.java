@@ -3,7 +3,11 @@ package org.example.pacman;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.text.Layout;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.widget.TextView;
+import android.widget.Toast;
 
 
 import java.util.ArrayList;
@@ -16,19 +20,23 @@ import java.util.Random;
 
 public class Game {
 
+
     private Context context;
     private int points = 0;
 
     private Bitmap pacBitmap;
     private Bitmap coinBitMap;
     private Bitmap enemyBitMap;
+    private Bitmap blueBitMap;
 
     private TextView pointsView;
     private TextView timeView;
+    private TextView blueCoinActive;
     private int pacx, pacy;
     //the list of goldcoins - initially empty
     private ArrayList<GoldCoin> coins = new ArrayList<>();
     private ArrayList<Enemy> enemies = new ArrayList<>();
+    private ArrayList<BlueCoin> blueCoins = new ArrayList<>();
     //a reference to the gameview
     private GameView gameView;
     private int h,w; //height and width of screen
@@ -37,7 +45,10 @@ public class Game {
     private boolean gameOver = false;
     private Random randy = new Random();
     private boolean coinsInit = false;
+    private boolean blueInit = false;
+    private boolean bluePickup = false;
     private boolean enemiesInit = false;
+    private boolean enemiesSpawned = false;
     private boolean running = false;
     private boolean isPaused = false;
 
@@ -46,17 +57,18 @@ public class Game {
     private int down = 2;
     private int right = 3;
     private int curDir;
-    private int enemyDir;
     private int time;
 
-    public Game(Context context, TextView view, TextView timeView)
+    public Game(Context context, TextView view, TextView timeView, TextView blueView)
     {
         this.context = context;
         this.pointsView = view;
         this.timeView = timeView;
+        this.blueCoinActive = blueView;
         pacBitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.pacman);
         coinBitMap = BitmapFactory.decodeResource(context.getResources(), R.drawable.golden);
         enemyBitMap = BitmapFactory.decodeResource(context.getResources(), R.drawable.enemy);
+        blueBitMap = BitmapFactory.decodeResource(context.getResources(), R.drawable.coinblue);
     }
 
     public void setGameView(GameView view)
@@ -74,12 +86,15 @@ public class Game {
         running = false;
         isPaused = false;
         time = 30;
-        timeView.setText(context.getResources().getString(R.string.time) + " " + time);
-        pointsView.setText(context.getResources().getString(R.string.points) + " " + points);
         coinsInit = false;
         enemiesInit = false;
         gameOver = false;
+        bluePickup = false;
         coinsLeft = amountofCoins;
+        timeView.setText(context.getResources().getString(R.string.time) + " " + time);
+        pointsView.setText(context.getResources().getString(R.string.points) + " " + points);
+        blueCoinActive.setText(context.getResources().getString(R.string.blueCoin) + " " + bluePickup);
+
 
         for (GoldCoin coin : coins)
         {
@@ -88,6 +103,11 @@ public class Game {
         for (Enemy enemy : enemies)
         {
             enemy.SetIsAlive(false);
+        }
+        for (BlueCoin blue : blueCoins)
+        {
+            blue.SetisTaken(true);
+            blueCoins.remove(blue);
         }
 
         gameView.invalidate(); //redraw screen
@@ -105,12 +125,32 @@ public class Game {
 
     public void initEnemies()
     {
-        for (int i = 0; i < 2; i++)
+        int enemyX;
+        int enemyY;
+        for (int i = 0; i < 3; i++)
         {
-            enemies.add(new Enemy(
-                    randy.nextInt(gameView.w - enemyBitMap.getWidth()),
-                    randy.nextInt(gameView.h - enemyBitMap.getHeight())));
+            enemiesSpawned = false;
+            while(!enemiesSpawned)
+            {
+                enemyX = randy.nextInt(gameView.w - enemyBitMap.getWidth());
+                enemyY = randy.nextInt(gameView.h - enemyBitMap.getHeight());
+
+                if (enemyX >= pacx + 200 && enemyY >= pacy + 200)
+                {
+                    enemies.add(new Enemy(enemyX, enemyY));
+                    enemiesSpawned = true;
+                }
+
+            }
+
         }
+    }
+
+    public void initBlueCoin()
+    {
+        blueCoins.add(new BlueCoin(
+                randy.nextInt(gameView.w - blueBitMap.getWidth()),
+                randy.nextInt(gameView.h - blueBitMap.getHeight())));
     }
 
     public void setSize(int h, int w)
@@ -143,11 +183,12 @@ public class Game {
     {
         for (GoldCoin coin : coins)
         {
-            if (Math.sqrt(((coin.getCoinx() - pacx) * (coin.getCoinx()- pacx))
-                    + ((coin.getCoiny() - pacy) * (coin.getCoiny() - pacy))) <= 150
-                    && !coin.isTaken() || Math.sqrt((-(coin.getCoinx() - pacx) * -(coin.getCoinx() - pacx))
-                    + (-(coin.getCoiny() - pacy) * -(coin.getCoiny() - pacy))) <= 150
-                    && !coin.isTaken() )
+            int dx = coin.getCoinx() - pacx;
+            int dy = coin.getCoiny() - pacy;
+            double d = Math.sqrt((dx * dx) + (dy * dy));
+            int r1 = pacBitmap.getHeight() + pacBitmap.getWidth() - 200;
+            int r2 = coinBitMap.getHeight() + coinBitMap.getWidth() - 200;
+            if (d <= r1 + r2 && !coin.isTaken() )
             {
                 coin.SetIsTaken(true);
                 points += coin.getValue();
@@ -156,23 +197,62 @@ public class Game {
                 if (coinsLeft == 0)
                 {
                     gameOver = true;
+                    GameOver(true);
                 }
             }
         }
 
-    }
-    public void enemyCollision()
-    {
         for (Enemy enemy : enemies)
         {
-            if (Math.sqrt(((enemy.getEnemyX() - pacx) * (enemy.getEnemyX() - pacx))
-                    + ((enemy.getEnemyY() - pacy) * (enemy.getEnemyY() - pacy))) <= 100
-                    && enemy.isAlive() || Math.sqrt((-(enemy.getEnemyX() - pacx) * -(enemy.getEnemyX() - pacx))
-                    + (-(enemy.getEnemyY() - pacy) * -(enemy.getEnemyY() - pacy))) <= 100
-                    && enemy.isAlive())
+            int dx = enemy.getEnemyX() - pacx;
+            int dy = enemy.getEnemyY() - pacy;
+            double d = Math.sqrt((dx * dx) + (dy * dy));
+            int r1 = pacBitmap.getHeight() + pacBitmap.getWidth() - 200;
+            int r2 = enemyBitMap.getHeight() + enemyBitMap.getWidth() - 200;
+
+            if (d <= r1 + r2 && enemy.isAlive() && !bluePickup)
             {
                 gameOver = true;
+                GameOver(false);
             }
+            else if(d <= r1 + r2 && enemy.isAlive() && bluePickup)
+            {
+                points += 100;
+                pointsView.setText(context.getText(R.string.points) + " " + points);
+                enemy.SetIsAlive(false);
+            }
+        }
+
+        for (BlueCoin coin : blueCoins)
+        {
+            int dx = coin.getBluex() - pacx;
+            int dy = coin.getBluey() - pacy;
+            double d = Math.sqrt((dx * dx) + (dy * dy));
+            int r1 = pacBitmap.getHeight() + pacBitmap.getWidth() - 250;
+            int r2 = blueBitMap.getHeight() + blueBitMap.getWidth() - 250;
+            if (d <= r1 + r2 && !coin.isTaken())
+            {
+                coin.SetisTaken(true);
+                bluePickup = true;
+                blueCoinActive.setText(context.getResources().getString(R.string.blueCoin) + " " + bluePickup);
+            }
+        }
+    }
+
+    public void GameOver(boolean victory)
+    {
+        Toast toast;
+        if (!victory)
+        {
+            toast = Toast.makeText(context, context.getText(R.string.gameOver)+ " Points: " + points,Toast.LENGTH_LONG);
+            toast.setGravity(Gravity.CENTER, 0,0);
+            toast.show();
+        }
+        else if(victory)
+        {
+            toast = Toast.makeText(context, context.getText(R.string.victory) + " Points: " + points,Toast.LENGTH_LONG);
+            toast.setGravity(Gravity.CENTER, 0,0);
+            toast.show();
         }
     }
 
@@ -188,8 +268,6 @@ public class Game {
     public int setPacy(int value){return pacy = value;}
 
     public int getCurDir(){return curDir;}
-    public int getCurEnemyDir(){return enemyDir;}
-    public int setEnemyDir(int value){return enemyDir = value;}
     public int getTime(){return time;}
     public int setTime(int value){return time = value;}
 
@@ -197,6 +275,7 @@ public class Game {
     public boolean setRunning(boolean value) {return running = value;}
     public boolean getIsPaused(){return isPaused;}
     public boolean setIsPaused(boolean value) {return isPaused = value;}
+    public boolean isBluePickup(){return bluePickup;}
 
     public int getPoints()
     {
@@ -210,14 +289,18 @@ public class Game {
     public boolean setCoinsInit(boolean value) {return coinsInit = value;}
     public boolean EnemiesInit() { return enemiesInit; }
     public boolean setEnemiesInit(boolean value) {return enemiesInit = value;}
+    public boolean BlueInit(){return blueInit;}
+    public boolean SetBlueInit(boolean value) {return blueInit = value;}
 
 
     public ArrayList<GoldCoin> getCoins(){return coins;}
     public ArrayList<Enemy> getEnemies(){return enemies;}
+    public ArrayList<BlueCoin> getBlueCoins(){return blueCoins;}
 
     public Bitmap getPacBitmap() {return pacBitmap;}
     public Bitmap getCoinBitMap(){return coinBitMap;}
     public Bitmap getEnemyBitMap(){return enemyBitMap;}
+    public Bitmap getBlueCoinBitmap(){return blueBitMap;}
 
 
 }

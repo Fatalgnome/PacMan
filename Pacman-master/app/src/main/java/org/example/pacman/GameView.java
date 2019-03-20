@@ -82,6 +82,14 @@ public class GameView extends View {
 			}
 		}
 
+		for(BlueCoin coin : game.getBlueCoins())
+		{
+			if (!coin.isTaken())
+			{
+				canvas.drawBitmap(game.getBlueCoinBitmap(), coin.getBluex(), coin.getBluey(), paint);
+			}
+		}
+
 		if(game.getGameOver())
 		{
 			game.newGame();

@@ -24,11 +24,14 @@ public class MainActivity extends AppCompatActivity
     Game game;
     int speed = 5;
     int enemySpeed = 7;
+    int blueSpeed = 5;
     private Timer pacTimer;
     private Timer realTimer;
     private Timer enemyTimer;
+    private Timer blueCoinTimer;
     private int delay = 15;
     private TextView timeView;
+    private TextView blueView;
     private Random randy = new Random();
 
     @Override
@@ -42,14 +45,15 @@ public class MainActivity extends AppCompatActivity
         gameView =  findViewById(R.id.gameView);
         TextView textView = findViewById(R.id.points);
         timeView = findViewById(R.id.time);
+        blueView = findViewById(R.id.blueCoin);
 
-
-        game = new Game(this,textView, timeView);
+        game = new Game(this,textView, timeView, blueView);
         game.setGameView(gameView);
         gameView.setGame(game);
         pacTimer = new Timer();
         realTimer = new Timer();
         enemyTimer = new Timer();
+        blueCoinTimer = new Timer();
 
         game.newGame();
 
@@ -73,6 +77,16 @@ public class MainActivity extends AppCompatActivity
                 RandomDir();
             }
         }, 500, 500);
+
+        blueCoinTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                if(game.getBlueCoins().size() < 1)
+                {
+                    SpawnBlueCoin();
+                }
+            }
+        }, 0,1000);
 
 
 
@@ -176,6 +190,8 @@ public class MainActivity extends AppCompatActivity
       this.runOnUiThread(Enemy_Tick);
     }
 
+    private void SpawnBlueCoin(){this.runOnUiThread(BlueCoin_Tick);}
+
     private Runnable Time_Tick = new Runnable() {
         @Override
         public void run() {
@@ -186,7 +202,7 @@ public class MainActivity extends AppCompatActivity
 
                 if (game.getTime() <= 0)
                 {
-                    GameOver();
+                    game.GameOver(false);
                     game.setRunning(false);
                     game.setIsPaused(true);
                     game.setGameOver(true);
@@ -202,7 +218,23 @@ public class MainActivity extends AppCompatActivity
         public void run() {
             if (game.isRunning())
             {
-                game.setEnemyDir(randy.nextInt(4));
+                for (Enemy enemy : game.getEnemies())
+                {
+                    enemy.setDir(randy.nextInt(4));
+                }
+
+            }
+        }
+    };
+
+    private Runnable BlueCoin_Tick = new Runnable()
+    {
+        @Override
+        public void run()
+        {
+            if (game.isRunning())
+            {
+                game.initBlueCoin();
             }
         }
     };
@@ -212,69 +244,64 @@ public class MainActivity extends AppCompatActivity
         @Override
         public void run()
         {
-            switch (game.getCurEnemyDir())
-            {
-                case 0:
-                    if (game.isRunning())
-                    {
-                        for (Enemy enemy : game.getEnemies())
-                        {
-                            if (enemy.getEnemyY() + enemySpeed > 0)
-                            {
-                                enemy.setEnemyY(enemy.getEnemyY() - enemySpeed);
-                                game.enemyCollision();
-                                gameView.invalidate();
-                            }
-                        }
-                    }
-                    break;
-                case 1:
-                    if (game.isRunning())
-                    {
-                        for (Enemy enemy : game.getEnemies())
-                        {
-                            if (enemy.getEnemyX() + enemySpeed > 0)
-                            {
-                                enemy.setEnemyX(enemy.getEnemyX() - enemySpeed);
-                                game.enemyCollision();
-                                gameView.invalidate();
-                            }
-                        }
-                    }
-                    break;
-                case 2:
-                    if (game.isRunning())
-                    {
-                        for (Enemy enemy : game.getEnemies())
-                        {
-                            if (enemy.getEnemyY() + enemySpeed + game.getEnemyBitMap().getWidth() < gameView.w)
-                            {
-                                enemy.setEnemyY(enemy.getEnemyY() + enemySpeed);
-                                game.enemyCollision();
-                                gameView.invalidate();
-                            }
-                        }
-                    }
-                    break;
-                case 3:
-                    if (game.isRunning())
-                    {
-                        for (Enemy enemy : game.getEnemies())
-                        {
-                            if (enemy.getEnemyX() + enemySpeed + game.getEnemyBitMap().getWidth() < gameView.w )
-                            {
-                                enemy.setEnemyX(enemy.getEnemyX() + enemySpeed);
-                                game.enemyCollision();
-                                gameView.invalidate();
-                            }
-                        }
-                    }
-                    break;
-            }
+           for (Enemy enemy : game.getEnemies()) {
+               switch (enemy.getDir()) {
+                   case 0:
+                       if (game.isRunning())
+                       {
+                           if (enemy.getEnemyY() + enemySpeed > 0)
+                           {
+                               enemy.setEnemyY(enemy.getEnemyY() - enemySpeed);
+                               game.doCollisionCheck();
+                               gameView.invalidate();
+                           }
+                       }
+                       break;
+                   case 1:
+                       if (game.isRunning())
+                       {
+                               if (enemy.getEnemyX() + enemySpeed > 0)
+                               {
+                                   enemy.setEnemyX(enemy.getEnemyX() - enemySpeed);
+                                   game.doCollisionCheck();
+                                   gameView.invalidate();
+                               }
+                       }
+                       break;
+                   case 2:
+                       if (game.isRunning())
+                       {
+                           if (enemy.getEnemyY() + enemySpeed + game.getEnemyBitMap().getWidth() < gameView.w)
+                           {
+                               enemy.setEnemyY(enemy.getEnemyY() + enemySpeed);
+                               game.doCollisionCheck();
+                               gameView.invalidate();
+                           }
+                       }
+                       break;
+                   case 3:
+                       if (game.isRunning())
+                       {
+                           if (enemy.getEnemyX() + enemySpeed + game.getEnemyBitMap().getWidth() < gameView.w)
+                           {
+                               enemy.setEnemyX(enemy.getEnemyX() + enemySpeed);
+                               game.doCollisionCheck();
+                               gameView.invalidate();
+                           }
+                       }
+
+                       break;
+               }
+           }
             switch (game.getCurDir())
             {
                 case 0:
-                    if (game.getPacy() + speed > 0 && game.isRunning())
+                    if(game.getPacy() + speed + blueSpeed > 0 && game.isRunning() && game.isBluePickup())
+                    {
+                        game.setPacy(game.getPacy() - speed - blueSpeed);
+                        game.doCollisionCheck();
+                        gameView.invalidate();
+                    }else if (game.getPacy() + speed > 0 && game.isRunning())
                     {
                         game.setPacy(game.getPacy() - speed);
                         game.doCollisionCheck();
@@ -282,22 +309,39 @@ public class MainActivity extends AppCompatActivity
                     }
                     break;
                 case 1:
-                    if (game.getPacx() + speed > 0 && game.isRunning())
+                    if(game.getPacx() + speed + blueSpeed > 0 && game.isRunning() && game.isBluePickup())
+                    {
+                        game.setPacx(game.getPacx() - speed - blueSpeed);
+                        game.doCollisionCheck();
+                        gameView.invalidate();
+                    }else if (game.getPacx() + speed > 0 && game.isRunning())
                     {
                         game.setPacx(game.getPacx() - speed);
                         game.doCollisionCheck();
                         gameView.invalidate();
                     }
+
                     break;
                 case 2:
-                    if (game.getPacy() + speed +game.getPacBitmap().getHeight()< gameView.h && game.isRunning()) {
+                    if(game.getPacy() + speed + blueSpeed + game.getPacBitmap().getHeight() < gameView.h && game.isRunning() && game.isBluePickup())
+                    {
+                        game.setPacy(game.getPacy() + speed + blueSpeed);
+                        game.doCollisionCheck();
+                        gameView.invalidate();
+                    }else if (game.getPacy() + speed +game.getPacBitmap().getHeight()< gameView.h && game.isRunning()) {
                         game.setPacy(game.getPacy() + speed);
                         game.doCollisionCheck();
                         gameView.invalidate();
                     }
+
                     break;
                 case 3:
-                    if (game.getPacx() + speed + game.getPacBitmap().getWidth() < gameView.w && game.isRunning()) {
+                    if(game.getPacx() + speed + blueSpeed + game.getPacBitmap().getWidth() < gameView.w && game.isRunning() && game.isBluePickup())
+                    {
+                        game.setPacx(game.getPacx() + speed + blueSpeed);
+                        game.doCollisionCheck();
+                        gameView.invalidate();
+                    }else if (game.getPacx() + speed + game.getPacBitmap().getWidth() < gameView.w && game.isRunning()) {
                         game.setPacx(game.getPacx() + speed);
                         game.doCollisionCheck();
                         gameView.invalidate();
@@ -334,11 +378,6 @@ public class MainActivity extends AppCompatActivity
         return super.onOptionsItemSelected(item);
     }
 
-    public void GameOver()
-    {
-        Toast toast = Toast.makeText(this,getText(R.string.gameOver),Toast.LENGTH_LONG);
-        toast.setGravity(Gravity.CENTER, 0,0);
-        toast.show();
-    }
+
 
 }

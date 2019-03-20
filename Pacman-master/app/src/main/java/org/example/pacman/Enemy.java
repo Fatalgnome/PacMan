@@ -4,6 +4,7 @@ public class Enemy
 {
     private int enemyX, enemyY;
     private boolean isAlive = true;
+    private int dir;
 
     public Enemy(int enemyX, int enemyY)
     {
@@ -18,4 +19,7 @@ public class Enemy
 
     public boolean isAlive(){return isAlive;}
     public boolean SetIsAlive(boolean value){return isAlive = value;}
+
+    public int getDir(){return dir;}
+    public int setDir(int value){return dir = value;}
 }
