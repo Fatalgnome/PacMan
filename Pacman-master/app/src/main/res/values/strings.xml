@@ -10,7 +10,7 @@
     <string name="newgame">New Game</string>
     <string name="pauseApp">Pause</string>
     <string name="continueApp">Continue</string>
-    <string name="gameOver">Game Over</string>
+    <string name="gameOver">Game Over!</string>
     <string name="victory">You Win!</string>
     <string name="blueCoin">Blue Coin Active:</string>
 </resources>
