@@ -42,7 +42,6 @@ public class Game {
         this.gameView = view;
     }
 
-    //TODO initialize goldcoins also here
     public void newGame()
     {
         pacx = 50;
@@ -69,11 +68,6 @@ public class Game {
         }
     }
 
-    //TODO check if the pacman touches a gold coin
-    //and if yes, then update the neccesseary data
-    //for the gold coins and the points
-    //so you need to go through the arraylist of goldcoins and
-    //check each of them for a collision with the pacman
     public void doCollisionCheck()
     {
 

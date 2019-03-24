@@ -94,8 +94,6 @@ public class GameView extends View {
 		{
 			game.newGame();
 		}
-
-		//TODO loop through the list of goldcoins and draw them.
 		super.onDraw(canvas);
 	}
 

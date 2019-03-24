@@ -48,7 +48,7 @@ public class Game {
     private boolean blueInit = false;
     private boolean bluePickup = false;
     private boolean enemiesInit = false;
-    private boolean enemiesSpawned = false;
+    private boolean enemySpawned = false;
     private boolean running = false;
     private boolean isPaused = false;
 
@@ -76,7 +76,6 @@ public class Game {
         this.gameView = view;
     }
 
-    //TODO initialize goldcoins also here
     public void newGame()
     {
         pacx = 50;
@@ -129,16 +128,16 @@ public class Game {
         int enemyY;
         for (int i = 0; i < 3; i++)
         {
-            enemiesSpawned = false;
-            while(!enemiesSpawned)
+            enemySpawned = false;
+            while(!enemySpawned)
             {
                 enemyX = randy.nextInt(gameView.w - enemyBitMap.getWidth());
                 enemyY = randy.nextInt(gameView.h - enemyBitMap.getHeight());
 
-                if (enemyX >= pacx + 200 && enemyY >= pacy + 200)
+                if (enemyX >= pacx + 100 && enemyY >= pacy + 150)
                 {
                     enemies.add(new Enemy(enemyX, enemyY));
-                    enemiesSpawned = true;
+                    enemySpawned = true;
                 }
 
             }
@@ -174,11 +173,6 @@ public class Game {
     public void movePacmanDown() {curDir = down;}
 
 
-    //TODO check if the pacman touches a gold coin
-    //and if yes, then update the neccesseary data
-    //for the gold coins and the points
-    //so you need to go through the arraylist of goldcoins and
-    //check each of them for a collision with the pacman
     public void doCollisionCheck()
     {
         for (GoldCoin coin : coins)
@@ -228,8 +222,8 @@ public class Game {
             int dx = coin.getBluex() - pacx;
             int dy = coin.getBluey() - pacy;
             double d = Math.sqrt((dx * dx) + (dy * dy));
-            int r1 = pacBitmap.getHeight() + pacBitmap.getWidth() - 250;
-            int r2 = blueBitMap.getHeight() + blueBitMap.getWidth() - 250;
+            int r1 = pacBitmap.getHeight() + pacBitmap.getWidth() - 200;
+            int r2 = blueBitMap.getHeight() + blueBitMap.getWidth() - 200;
             if (d <= r1 + r2 && !coin.isTaken())
             {
                 coin.SetisTaken(true);
@@ -277,11 +271,6 @@ public class Game {
     public boolean setIsPaused(boolean value) {return isPaused = value;}
     public boolean isBluePickup(){return bluePickup;}
 
-    public int getPoints()
-    {
-        return points;
-    }
-
     public boolean getGameOver() {return gameOver;}
     public boolean setGameOver(boolean value) {return gameOver = value;}
 
@@ -289,8 +278,6 @@ public class Game {
     public boolean setCoinsInit(boolean value) {return coinsInit = value;}
     public boolean EnemiesInit() { return enemiesInit; }
     public boolean setEnemiesInit(boolean value) {return enemiesInit = value;}
-    public boolean BlueInit(){return blueInit;}
-    public boolean SetBlueInit(boolean value) {return blueInit = value;}
 
 
     public ArrayList<GoldCoin> getCoins(){return coins;}
