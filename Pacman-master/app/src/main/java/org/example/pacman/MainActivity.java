@@ -86,7 +86,7 @@ public class MainActivity extends AppCompatActivity
                     SpawnBlueCoin();
                 }
             }
-        }, 0,1000);
+        }, 0,10000);
 
 
 
